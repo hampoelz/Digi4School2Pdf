@@ -1,0 +1,76 @@
+{
+  "name": "digi4school2pdf",
+  "productName": "Digi4School Downloader",
+  "version": "0.1.0",
+  "description": "Download E-Books from Digi4School as PDF",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hampoelz/Digi4School-Downloader.git"
+  },
+  "keywords": [
+    "Digi4School",
+    "Digi4School2Pdf",
+    "Digi4School to pdf",
+    "Digi4School downloader",
+    "Digi4School PDF downloader"
+  ],
+  "author": {
+    "name": "Rene Hampölz",
+    "email": "service@hampoelz.net"
+  },
+  "homepage": "https://hampoelz.net/",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^11.1.1",
+    "electron-builder": "^22.9.1"
+  },
+  "dependencies": {
+    "fswin": "^3.21.107",
+    "pdfkit": "^0.11.0",
+    "svg-to-pdfkit": "^0.1.8"
+  },
+  "build": {
+    "appId": "net.hampoelz.digi4school2pdf.desktop",
+    "productName": "Digi4School2Pdf",
+    "copyright": "Copyright © 2020 Rene Hampölz",
+    "win": {
+      "target": [
+        {
+          "target": "appx",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        },
+        {
+          "target": "nsis"
+        },
+        {
+          "target": "portable"
+        }
+      ],
+      "icon": "build/d4s_icon.ico",
+      "legalTrademarks": "Copyright © 2020 Rene Hampölz",
+      "publisherName": "Rene Hampölz"
+    },
+    "appx": {
+      "applicationId": "Hampoelz.Digi4School2Pdf",
+      "backgroundColor": "#67C6EE",
+      "displayName": "Digi4School2Pdf",
+      "identityName": "43854RH-Programm.2854494CCC3AF",
+      "publisher": "CN=765089AC-7879-4AB6-97BC-DCAE302E4761",
+      "publisherDisplayName": "Hampis Projekte",
+      "languages": [
+        "en",
+        "de"
+      ]
+    }
+  }
+}
