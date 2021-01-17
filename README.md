@@ -14,7 +14,7 @@
 ### Hard Installation
 1. Go to [/releases/latest](https://github.com/hampoelz/Digi4School2Pdf/releases/latest)
 2. Open the `Assets` Section
-3. Download `Digi4School2Pdf-v0.1.0.exe` or `Digi4School2Pdf-Setup-v0.1.0.exe`
+3. Download `Digi4School2Pdf-vX.X.X-win32-portable.exe` or `Digi4School2Pdf-vX.X.X-win32-setup.exe`
 4. The browser will warn you that the file could be unsafe
 5. Click on the three dots and on `Keep`
 6. Click on `show more` and `Still keep`
