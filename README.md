@@ -36,7 +36,7 @@ That happens because these files are not signed - that would cost too much money
 7. The App will automatic open the PDF when it's ready
 
 __The PDF is broken, what should I do?__  
-Try to download the PDF again if it still doesn't work after that, you can open an issue on [/issues/new](https://github.com/rh-utensils/MusicPlayer/issues/new) and report this bug.
+Try to download the PDF again if it still doesn't work after that, you can open an issue on [/issues/new](https://github.com/hampoelz/Digi4School2Pdf/issues/new) and report this bug.
 
 ## Disclaimer
 This project is for educational purposes only and it's illegal to download and/or use the generated PDF-files.
