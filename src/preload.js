@@ -7,8 +7,6 @@ const fs = require('fs');
 
 window.ipcRenderer = ipcRenderer;
 
-window.addEventListener('DOMContentLoaded', async () => await downloader.removeTempData());
-
 ipcRenderer.on('close', async () => {
   manipulateContent('Clear download cache, please wait ...');
   await downloader.removeTempData();
@@ -59,6 +57,12 @@ ipcRenderer.on('download', async (_, mode) => {
   var doc = new PDFDocument({ autoFirstPage: false });
   doc.pipe(fs.createWriteStream(filePath));
 
+  window.addEventListener('beforeunload', async () => {
+    doc.end();
+    manipulateContent('Clear download cache ...');
+    await downloader.removeTempData()
+  });
+
   if (mode == 'page') {
     manipulateContent(`Downloading current page ...`);
     try {
@@ -76,8 +80,9 @@ ipcRenderer.on('download', async (_, mode) => {
       manipulateContent(`Downloading page ${i} ...`, { customPage: i});
       try {
         var response = await downloader.writePageToPdf(doc, bookSize, folderPathTemp, window.location, i);
-        if (response.status == 404) loop = false;
-        else new Error(response.message);
+        if (response && response.status == 404) loop = false;
+        else if (response) new Error(response.message);
+        else return;
       } catch (error) {
         loop = false;
         manipulateContent(error.message);

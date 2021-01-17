@@ -42,6 +42,7 @@ async function writePageToPdf(doc, bookSize, localFolder, url, page = null) {
         var imgElements = html.getElementsByTagName("image");
         if (imgElements.length > 0) {
             for (let i = 0; i < imgElements.length; i++) {
+                if (settings.localPdf == null) return;
                 var element = imgElements[i];
                 var imageSrc = element.getAttribute('xlink:href');
                 var imagePath = path.join(localFolder, page.toString(), imageSrc);
@@ -75,13 +76,15 @@ async function writePageToPdf(doc, bookSize, localFolder, url, page = null) {
 }
 
 async function removeTempData() {
-    if (settings.localPdf != null) {
-        var tmpPath = settings.localPdf.replace('.pdf', '_tmp').replaceAll(' ', '');
+    var filePath = settings.localPdf;
+    settings.localPdf = null;
+    if (filePath != null) {
+        var tmpPath = filePath.replace('.pdf', '_tmp').replaceAll(' ', '');
 
-        if (fs.existsSync(settings.localPdf)) await fs.promises.unlink(settings.localPdf);
-        if (fs.existsSync(tmpPath)) await fs.promises.rmdir(tmpPath, { recursive: true });
-
-        settings.localPdf = null;
+        try {
+            await fs.promises.rmdir(tmpPath, { recursive: true });
+            await fs.promises.unlink(filePath);
+        } catch {}
     }
 }
 
