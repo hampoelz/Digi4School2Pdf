@@ -38,7 +38,7 @@ That happens because these files are not signed - that would cost too much money
 __The PDF is broken, what should I do?__  
 You can try to use the free pdf repairer [ilovepdf.com/repair-pdf](https://www.ilovepdf.com/repair-pdf)
 
-_*❗ I will soon implement an automatic solution to repair the PDF*_
+_*❗ I will soon try to implement an automatic solution to repair the broken PDFs*_
 
 ## Disclaimer
 This project is for educational purposes only and it's illegal to download and/or use the generated PDF-files.
