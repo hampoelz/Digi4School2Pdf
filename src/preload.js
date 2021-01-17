@@ -49,6 +49,8 @@ ipcRenderer.on('download', async (_, mode) => {
 
   downloader.settings.localPdf = filePath;
   await downloader.removeTempData();
+
+  downloader.settings.localPdf = filePath; // downloader.removeTempData() resets localPdf property
   await fs.promises.mkdir(folderPathTemp);
   fswin.setAttributesSync(folderPathTemp, { IS_HIDDEN: true });
 
