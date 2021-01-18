@@ -24,7 +24,7 @@
 10. Congratulations you did it
 
 __Why does the browser and Windows display these messages?__  
-That happens because these files are not signed - that would cost too much money for a small open source project - For this reason, I strongly recommend installing the App via the Microsoft Store. There you will receive automatic updates and the app has been signed by Microsoft, you will not receive any warnings
+That happens because these files are not signed - that would cost too much money for a small open source project - For this reason, I strongly recommend installing the App via the Microsoft Store. There you will receive automatic updates and the app has been signed by Microsoft, you will not get any warnings.
 
 ## Usage
 1. Open the App
@@ -38,7 +38,7 @@ That happens because these files are not signed - that would cost too much money
 __The PDF is broken, what should I do?__  
 You can try to use the free pdf repairer [ilovepdf.com/repair-pdf](https://www.ilovepdf.com/repair-pdf)
 
-_*❗ I will soon try to implement an automatic solution to repair the broken PDFs*_
+_*❗ I will soon try fix this issue!*_
 
 ## Disclaimer
 This project is for educational purposes only and it's illegal to download and/or use the generated PDF-files.
