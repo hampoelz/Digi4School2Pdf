@@ -8,10 +8,6 @@ nativeTheme.themeSource = 'light'
 
 app.on('ready', () => {
   mainWindow = new Browser('https://digi4school.at/');
-  mainWindow.on('close', event => {
-    event.preventDefault();
-    mainWindow.webContents.send('close');
-  });
   Menu.setApplicationMenu(downloadMenu);
 });
 

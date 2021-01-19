@@ -1,11 +1,5 @@
 const SVGtoPDF = require('svg-to-pdfkit');
 const URL = require('url').URL;
-const path = require('path');
-const fs = require('fs');
-
-const settings = {
-    localPdf: null
-}
 
 async function isDownloadable(url, page = 1) {
     url = new URL(url);
@@ -18,7 +12,7 @@ async function isDownloadable(url, page = 1) {
     return response.ok;
 }
 
-async function writePageToPdf(doc, bookSize, localFolder, url, page = null) {
+async function writePageToPdf(doc, bookSize, url, page = null) {
     url = new URL(url);
 
     var protocol = url.protocol;
@@ -39,23 +33,17 @@ async function writePageToPdf(doc, bookSize, localFolder, url, page = null) {
         var svgElements = html.getElementsByTagName("svg");
         if (svgElements.length <= 0) return new Error(`Can't parse the requested page ${page}!`);
 
+        var images = {};
         var imgElements = html.getElementsByTagName("image");
         if (imgElements.length > 0) {
             for (let i = 0; i < imgElements.length; i++) {
-                if (settings.localPdf == null) return;
-                var element = imgElements[i];
-                var imageSrc = element.getAttribute('xlink:href');
-                var imagePath = path.join(localFolder, page.toString(), imageSrc);
-                var imageDir = path.dirname(imagePath);
+                var imageSrc = imgElements[i].getAttribute('xlink:href');
 
                 var imageResponse = await fetch(uri + imageSrc);
                 if (!imageResponse.ok) return new Error(`Error getting the requested image file from '${uri}${imageSrc}'!`);
+
                 var arrayBuffer = await imageResponse.arrayBuffer();
-
-                if (!fs.existsSync(imageDir)) await fs.promises.mkdir(imageDir, { recursive: true });
-                await fs.promises.writeFile(imagePath, Buffer.from(arrayBuffer));
-
-                element.setAttribute('xlink:href', imagePath);
+                images[imageSrc] = arrayBuffer;
             }
         }
 
@@ -63,34 +51,22 @@ async function writePageToPdf(doc, bookSize, localFolder, url, page = null) {
 
         svg = svgElements[0].outerHTML;
 
-        
         try {
-            SVGtoPDF(doc, svg, 0, 0);
+            SVGtoPDF(doc, svg, 0, 0, {
+                imageCallback: image => images[image]
+            });
         } catch {
             svg = svg.replaceAll(': 0,', '') // fix svg convert error
-            SVGtoPDF(doc, svg, 0, 0);
+            SVGtoPDF(doc, svg, 0, 0, {
+                imageCallback: image => images[image]
+            });
         }    
     }
 
     return response;
 }
 
-async function removeTempData() {
-    var filePath = settings.localPdf;
-    settings.localPdf = null;
-    if (filePath != null) {
-        var tmpPath = filePath.replace('.pdf', '_tmp').replaceAll(' ', '');
-
-        try {
-            await fs.promises.rmdir(tmpPath, { recursive: true });
-            await fs.promises.unlink(filePath);
-        } catch {}
-    }
-}
-
 module.exports = {
-    settings,
     isDownloadable,
-    writePageToPdf,
-    removeTempData
+    writePageToPdf
 };

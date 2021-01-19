@@ -2,19 +2,14 @@ const { ipcRenderer, shell, remote } = require('electron');
 const PDFDocument = require('pdfkit');
 const downloader = require('../app/downloader');
 const path = require('path');
-const fswin = require('fswin');
 const fs = require('fs');
 
 window.ipcRenderer = ipcRenderer;
 
-ipcRenderer.on('close', async () => {
-  manipulateContent('Clear download cache, please wait ...');
-  await downloader.removeTempData();
-  remote.app.exit(0);
-});
+var lockDownload = false;
 
 ipcRenderer.on('download', async (_, mode) => {
-  if (downloader.settings.localPdf != null) {
+  if (lockDownload) {
     remote.dialog.showMessageBox(null, {
       type: 'info', title: 'Download is running ...', message: 'Your book has not yet been fully downloaded!', detail: 'Please wait until your book has finished downloading before starting the next one, only one book can be downloaded at a time.'
     });
@@ -43,14 +38,7 @@ ipcRenderer.on('download', async (_, mode) => {
     return;
   }
 
-  var folderPathTemp = filePath.replace('.pdf', '_tmp').replaceAll(' ', '');
-
-  downloader.settings.localPdf = filePath;
-  await downloader.removeTempData();
-
-  downloader.settings.localPdf = filePath; // downloader.removeTempData() resets localPdf property
-  await fs.promises.mkdir(folderPathTemp);
-  fswin.setAttributesSync(folderPathTemp, { IS_HIDDEN: true });
+  lockDownload = true;
 
   manipulateContent('Create pdf file ...');
 
@@ -60,18 +48,12 @@ ipcRenderer.on('download', async (_, mode) => {
   var doc = new PDFDocument({ autoFirstPage: false });
   doc.pipe(writeStream);
 
-  window.addEventListener('beforeunload', async () => {
-    doc.end();
-    manipulateContent('Clear download cache ...');
-    await downloader.removeTempData()
-  });
-
   if (mode == 'page') {
     manipulateContent(`Downloading current page ...`);
     try {
-      await downloader.writePageToPdf(doc, bookSize, folderPathTemp, window.location);
+      await downloader.writePageToPdf(doc, bookSize, window.location);
     } catch (error) {
-      manipulateContent(error.message);
+      lockDownload = false;;
       showDownloadError(error);
       document.location.reload();
       return;
@@ -82,13 +64,12 @@ ipcRenderer.on('download', async (_, mode) => {
     for (var i = 1; loop; i++) {
       manipulateContent(`Downloading page ${i} ...`, { customPage: i});
       try {
-        var response = await downloader.writePageToPdf(doc, bookSize, folderPathTemp, window.location, i);
+        var response = await downloader.writePageToPdf(doc, bookSize, window.location, i);
         if (response && response.status == 404) loop = false;
         else if (response) new Error(response.message);
-        else return;
       } catch (error) {
         loop = false;
-        manipulateContent(error.message);
+        lockDownload = false;
         showDownloadError(error);
         window.document.location.search = '?page=' + i;
         return;
@@ -104,10 +85,7 @@ ipcRenderer.on('download', async (_, mode) => {
 
   doc.end();
 
-  manipulateContent('Clear download cache ...');
-
-  await fs.promises.rmdir(folderPathTemp, { recursive: true });
-  downloader.settings.localPdf = null;
+  lockDownload = false;
 
   manipulateContent('Download Complete!');
 });
