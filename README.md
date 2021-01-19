@@ -7,7 +7,7 @@
 
 ## Installation
 ### Easy Installation
-1. Open [microsoft.com/store/apps/9P718Q8X3X6Q](https://www.microsoft.com/store/apps/9P718Q8X3X6Q)
+1. Open [microsoft.com/store/apps/9P718Q8X3X6Q](https://www.microsoft.com/store/apps/9P718Q8X3X6Q) _(Not working at the moment, as the app is still being certified by Microsoft Store)_
 2. Click `Download`, then click `Install`
 3. That’s it
 
