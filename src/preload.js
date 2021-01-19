@@ -43,8 +43,13 @@ ipcRenderer.on('download', async (_, mode) => {
   manipulateContent('Create pdf file ...');
 
   var writeStream = fs.createWriteStream(filePath)
-  writeStream.on('finish', async () => await shell.openPath(filePath));
-  
+  writeStream.on('finish', async () => {
+    lockDownload = false;
+    manipulateContent('Download Complete!');
+    await shell.openPath(filePath);
+    document.location.reload();
+  });
+
   var doc = new PDFDocument({ autoFirstPage: false });
   doc.pipe(writeStream);
 
@@ -83,11 +88,11 @@ ipcRenderer.on('download', async (_, mode) => {
     });
   }
 
-  doc.end();
+  manipulateContent('Save Pdf file ...');
 
-  lockDownload = false;
-
-  manipulateContent('Download Complete!');
+  while (true) {
+    doc.end();
+  }
 });
 
 function getBookSize() {
