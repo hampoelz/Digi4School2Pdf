@@ -1,143 +1,145 @@
-const { ipcRenderer, shell, remote } = require('electron');
-const PDFDocument = require('pdfkit');
-const downloader = require('../app/downloader');
-const path = require('path');
-const fs = require('fs');
+const { ipcRenderer } = require('electron');
 
 window.ipcRenderer = ipcRenderer;
 
-var lockDownload = false;
+ipcRenderer.on('request:Fetch', async (_, uri) => {
+  var response = await window.fetch(uri);
+  var arrayBuffer = await response.arrayBuffer();
 
-ipcRenderer.on('download', async (_, mode) => {
-  if (lockDownload) {
-    remote.dialog.showMessageBox(null, {
-      type: 'info', title: 'Download is running ...', message: 'Your book has not yet been fully downloaded!', detail: 'Please wait until your book has finished downloading before starting the next one, only one book can be downloaded at a time.'
-    });
-    return;
-  }
+  ipcRenderer.send('Fetch', { ok: response.ok, status: response.status, statusText: response.statusText, arrayBuffer});
+});
 
-  var bookSize = getBookSize();
-  if (!bookSize) {
-    remote.dialog.showMessageBox(null, {
-      type: 'info', title: 'Nothing found to download!', message: 'No book was found to download!', detail: 'Please go to a book that you want to download. If you\'ve already opened the book, please open an issue on Github and report that you cannot download this book.'
-    });
-    return;
-  }
+ipcRenderer.on('request:SvgData', () => {
+  var baseUri;
+  var content;
 
-  manipulateContent('Select storage location to save the PDF ...');
-
-  var input = await remote.dialog.showSaveDialog({
-    'filters': [{ 'name': 'PDF', 'extensions': ['pdf'] }],
-    'defaultPath': path.join(remote.app.getPath('documents'), document.title + '.pdf')
-  });
-
-  var filePath = input.filePath;
-  if (!filePath) {
-    manipulateContent('Canceled download...');
-    document.location.reload();
-    return;
-  }
-
-  lockDownload = true;
-
-  manipulateContent('Create pdf file ...');
-
-  var writeStream = fs.createWriteStream(filePath)
-  writeStream.on('finish', async () => {
-    lockDownload = false;
-    manipulateContent('Download Complete!');
-    await shell.openPath(filePath);
-    document.location.reload();
-  });
-
-  var doc = new PDFDocument({ autoFirstPage: false });
-  doc.pipe(writeStream);
-
-  if (mode == 'page') {
-    manipulateContent(`Downloading current page ...`);
-    try {
-      await downloader.writePageToPdf(doc, bookSize, window.location);
-    } catch (error) {
-      lockDownload = false;;
-      showDownloadError(error);
-      document.location.reload();
-      return;
-    }
-  }
-  else if (mode == 'book') {
-    var loop = true;
-    for (var i = 1; loop; i++) {
-      manipulateContent(`Downloading page ${i} ...`, { customPage: i});
-      try {
-        var response = await downloader.writePageToPdf(doc, bookSize, window.location, i);
-        if (response && response.status == 404) loop = false;
-        else if (response) new Error(response.message);
-      } catch (error) {
-        loop = false;
-        lockDownload = false;
-        showDownloadError(error);
-        window.document.location.search = '?page=' + i;
-        return;
+  var svgObject = window.document.getElementsByTagName('object')[0];
+  if (svgObject) {
+    var svgElement = svgObject.contentDocument.getElementsByTagName('svg')[0];
+    if (svgElement) {
+      baseUri = svgElement.baseURI;
+      if (baseUri) {
+        content = svgElement.outerHTML;
       }
     }
   }
 
-  function showDownloadError(error) {
-    remote.dialog.showMessageBox(null, {
-      type: 'error', title: 'Download error!', message: 'Unfortunately an error occurred while downloading your book!', detail: error.message
-    });
-  }
-
-  manipulateContent('Save Pdf file ...');
-
-  while (true) {
-    doc.end();
-  }
+  ipcRenderer.send('SvgData', { baseUri, content });
 });
 
-function getBookSize() {
+ipcRenderer.on('request:BookSize', () => {
+  var size;
+
   var scriptTags = window.document.getElementsByTagName("script");
-  if (scriptTags == undefined) return null;
+  if(scriptTags) {
+    var scriptRegex = /[0-9]*,[0-9]*/gm;
+    var sizes = scriptRegex.exec(scriptTags[0].innerHTML);
+    if (sizes) {
+      size = [Number(sizes[0].split(',')[0]), Number(sizes[0].split(',')[1])];
+    }
+  }
 
-  var scriptRegex = /[0-9]*,[0-9]*/gm;
-  var sizes = scriptRegex.exec(scriptTags[0].innerHTML);
-  if (sizes == undefined) return null;
+  ipcRenderer.send('BookSize', size);
+});
 
-  var isBook = downloader.isDownloadable(location.href);
-  if (!isBook) return null;
+ipcRenderer.on('request:BookTitle', () => {
+  var title = window.document.title;
 
-  return [Number(sizes[0].split(',')[0]), Number(sizes[0].split(',')[1])];
-}
+  var metas = window.document.getElementsByTagName('meta');
+  for (let i = 0; i < metas.length; i++) {
+    if (metas[i].getAttribute('name') == 'title') {
+      title = metas[i].getAttribute('content');
+    }
+  }
 
-function manipulateContent(message, { customPage } = {}) {
-  var navigationElement = document.getElementById('mainNav');  
-  var messageElement = document.getElementById('message');
+  ipcRenderer.send('BookTitle', title);
+});
+
+ipcRenderer.on('wait:PageLoaded', () => {
+  var isPageLoading = true;
+
+  var loadPage = window.document.getElementById('loadPage');
+  if (loadPage) {
+    while (isPageLoading)
+      if (loadPage.style.display == 'none') isPageLoading = false;
+  }
+
+  ipcRenderer.send('PageLoaded');
+});
+
+ipcRenderer.on('zoomOut', () => IDRViewer.zoomOut())
+
+ipcRenderer.on('manipulateContent', (_, message, { text, url }) => {
+  var navigationElement = window.document.getElementById('mainNav');
+  var overlayElement = window.document.getElementById('download-overlay');
+  var messageElement = window.document.getElementById('download-message');
+  var buttonElement = window.document.getElementById('download-button');
+
+  if (!overlayElement) {
+    if (navigationElement) {
+      navigationElement.style.pointerEvents = 'none';
+      navigationElement.style.backgroundColor = '#fff';
+    }
+    overlayElement = window.document.createElement("div");
+    overlayElement.id = 'download-overlay';
+    overlayElement.style.position = 'fixed';
+    overlayElement.style.display = 'block';
+    overlayElement.style.width = '100%';
+    overlayElement.style.height = '100%';
+    overlayElement.style.top = '39px';
+    overlayElement.style.left = '0';
+    overlayElement.style.right = '0';
+    overlayElement.style.bottom = '0';
+    overlayElement.style.zIndex = '100';
+    overlayElement.style.backgroundColor = 'rgba(0,0,0,0.7)';
+    overlayElement.style.backdropFilter = 'blur(6px)';
+
+    var contentElement = window.document.getElementById('mainContent');
+    if (contentElement) {
+      contentElement.prepend(overlayElement);
+    } else {
+      var body = window.document.getElementsByTagName('body')[0];
+      body.prepend(overlayElement);
+    }
+  }
 
   if (!messageElement) {
-    messageElement = document.createElement("p");
-    messageElement.id = 'message';
+    messageElement = window.document.createElement("p");
+    messageElement.id = 'download-message';
     messageElement.style.color = '#fff';
     messageElement.style.fontSize = '20pt';
+    messageElement.style.fontWeight = 'bold';
     messageElement.style.fontFamily = 'Open Sans, sans-serif';
     messageElement.style.left = '50%';
     messageElement.style.top = '50%';
     messageElement.style.position = 'absolute';
     messageElement.style.textAlign = 'center';
     messageElement.style.transform = 'translate(-50%, -50%)';
-    
-    var contentElement = document.getElementById('mainContent');
-    if (navigationElement && contentElement) {
-      navigationElement.style.pointerEvents = 'none';
-      contentElement.innerHTML = null;
-      contentElement.appendChild(messageElement);
-    } else {
-      var body = document.getElementsByTagName('body')[0];
-      body.innerHTML = null;
-      body.appendChild(messageElement);
-    }
+    messageElement.style.userSelect = 'none';
+
+    overlayElement.appendChild(messageElement);
   }
-  
-  if (navigationElement && customPage) document.getElementById('txtPage').value = customPage;
+
+  if (text && url && !buttonElement) {
+    buttonElement = window.document.createElement("a");
+    buttonElement.id = 'download-button';
+    buttonElement.style.color = '#fff';
+    buttonElement.style.fontSize = '15pt';
+    buttonElement.style.fontFamily = 'Open Sans, sans-serif';
+    buttonElement.style.left = '50%';
+    buttonElement.style.top = '65%';
+    buttonElement.style.position = 'absolute';
+    buttonElement.style.textAlign = 'center';
+    buttonElement.style.transform = 'translate(-50%, -200%)';
+    buttonElement.style.userSelect = 'none';
+    
+    overlayElement.appendChild(buttonElement);
+  }
+
+  if (text && url) {
+    buttonElement.innerHTML = text;
+    buttonElement.href = url;
+  }
 
   messageElement.innerHTML = message;
-}
+});

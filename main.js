@@ -1,14 +1,48 @@
-const { app, shell, nativeTheme, dialog, Menu } = require('electron');
-const Browser = require('./app/browser');
+const { app, shell, nativeTheme, BrowserWindow, Menu } = require('electron');
+const downloader = require('./src/downloader');
+const path = require('path');
 
 nativeTheme.themeSource = 'light'
 
 // TODO: Add offline check
-// TODO: Only allow single instance
 
-app.on('ready', () => {
-  mainWindow = new Browser('https://digi4school.at/');
+let mainWindow;
+
+function createWindow() {
+  const options = {
+    minWidth: 880,
+    minHeight: 700,
+    width: 880,
+    height: 860,
+    backgroundColor: '#67C6EE',
+    icon: path.join(__dirname, 'build', 'icon.png'),
+    center: true,
+    webPreferences: {
+      nodeIntegration: false,
+      preload: path.resolve(__dirname, 'src', 'preload.js'),
+    }
+  };
+
+  mainWindow = new BrowserWindow(options);
+  mainWindow.loadURL('https://digi4school.at/');
+  mainWindow.webContents.on('new-window', (event, url) => {
+    event.preventDefault();
+    mainWindow.loadURL(url);
+  });
+}
+
+app.whenReady().then(() => {
+  createWindow()
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  });
+
   Menu.setApplicationMenu(downloadMenu);
+});
+
+app.on('window-all-closed', function () {
+  if (process.platform !== 'darwin') app.quit()
 });
 
 var downloadMenu = Menu.buildFromTemplate([
@@ -25,11 +59,11 @@ var downloadMenu = Menu.buildFromTemplate([
     submenu: [
       {
         label: '📄 Current Page',
-        click: () => mainWindow.webContents.send('download', 'page')
+        click: async () => await downloader.requestDownloadAsync(mainWindow, 'page')
       },
       {
         label: '📘 Complete Book',
-        click: () => mainWindow.webContents.send('download', 'book')
+        click: async () => await downloader.requestDownloadAsync(mainWindow, 'book')
       }
     ]
   },
@@ -95,7 +129,7 @@ var downloadMenu = Menu.buildFromTemplate([
     label: '💁 Help',
     submenu: [
       {
-        label: 'Pre-Release v0.1.2'
+        label: 'Pre-Release v' + app.getVersion()
       },
       {
         label: 'Releases',

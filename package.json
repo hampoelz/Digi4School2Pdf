@@ -1,7 +1,7 @@
 {
   "name": "digi4school2pdf",
   "productName": "Digi4School Downloader",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Download E-Books from Digi4School as PDF",
   "main": "main.js",
   "scripts": {
@@ -32,6 +32,7 @@
     "electron-builder": "^22.9.1"
   },
   "dependencies": {
+    "jsdom": "^16.4.0",
     "pdfkit": "^0.11.0",
     "svg-to-pdfkit": "^0.1.8"
   },
@@ -55,7 +56,7 @@
           "target": "portable"
         }
       ],
-      "icon": "build/d4s_icon.ico",
+      "icon": "build/icon.png",
       "legalTrademarks": "Copyright © 2020 Rene Hampölz",
       "publisherName": "Rene Hampölz"
     },
