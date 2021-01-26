@@ -14,7 +14,7 @@ const options = {
   width: 880,
   height: 860,
   backgroundColor: '#67C6EE',
-  icon: path.join(__dirname, 'build', 'icon.png'),
+  icon: path.join(__dirname, 'src', 'icon.png'),
   center: true,
   show: true,
   webPreferences: {
