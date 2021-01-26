@@ -9,7 +9,7 @@ const fs = require('fs');
 async function requestDownloadAsync(browserWindow, mode) {
     if (browserWindow.isDownloading) {
         dialog.showMessageBox(browserWindow, {
-            type: 'info', title: 'Download is running ...', message: 'Your book has not yet been fully downloaded!', detail: 'Please wait until your book has finished downloading before starting the next one, only one book can be downloaded at a time.'
+            type: 'info', title: 'Download is running ...', message: 'Your book is not fully downloaded!', detail: 'Please wait until your book has finished downloading before starting the next one, only one book can be downloaded at a time.'
         });
         return;
     }
