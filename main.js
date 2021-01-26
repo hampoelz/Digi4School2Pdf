@@ -1,4 +1,4 @@
-const { app, shell, nativeTheme, BrowserWindow, Menu } = require('electron');
+const { app, shell, dialog, nativeTheme, BrowserWindow, Menu } = require('electron');
 const downloader = require('./src/downloader');
 const path = require('path');
 
@@ -8,47 +8,39 @@ nativeTheme.themeSource = 'light'
 
 let mainWindow;
 
-function createWindow() {
-  const options = {
-    minWidth: 880,
-    minHeight: 700,
-    width: 880,
-    height: 860,
-    backgroundColor: '#67C6EE',
-    icon: path.join(__dirname, 'build', 'icon.png'),
-    center: true,
-    webPreferences: {
-      nodeIntegration: false,
-      preload: path.resolve(__dirname, 'src', 'preload.js'),
-    }
-  };
+const options = {
+  minWidth: 880,
+  minHeight: 700,
+  width: 880,
+  height: 860,
+  backgroundColor: '#67C6EE',
+  icon: path.join(__dirname, 'build', 'icon.png'),
+  center: true,
+  show: true,
+  webPreferences: {
+    nodeIntegration: false,
+    preload: path.resolve(__dirname, 'src', 'preload.js'),
+  }
+};
 
+app.on('ready', () => {
   mainWindow = new BrowserWindow(options);
   mainWindow.loadURL('https://digi4school.at/');
   mainWindow.webContents.on('new-window', (event, url) => {
     event.preventDefault();
     mainWindow.loadURL(url);
   });
-}
-
-app.whenReady().then(() => {
-  createWindow()
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  });
-
   Menu.setApplicationMenu(downloadMenu);
 });
 
-app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') app.quit()
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
 });
 
 var downloadMenu = Menu.buildFromTemplate([
   {
     label: '📚 Digi4School',
-    click: () => mainWindow.loadHome()
+    click: () => mainWindow.loadURL('https://digi4school.at/')
   },
   {
     label: '🔙 Go Back',
