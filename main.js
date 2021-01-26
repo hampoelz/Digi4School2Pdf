@@ -37,14 +37,26 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
+function canNavigate() {
+  if (!mainWindow.isDownloading) return true;
+  dialog.showMessageBox(mainWindow, {
+    type: 'info', title: 'Download is running ...', message: 'Your book has not yet been fully downloaded!', detail: 'Please wait until your book has finished downloading.\n\nIf you want to cancel the download, you can simply close the window.'
+  });
+  return false;
+}
+
 var downloadMenu = Menu.buildFromTemplate([
   {
     label: '📚 Digi4School',
-    click: () => mainWindow.loadURL('https://digi4school.at/')
+    click: () => {
+      if (canNavigate()) mainWindow.loadURL('https://digi4school.at/');
+    }
   },
   {
     label: '🔙 Go Back',
-    click: () => mainWindow.webContents.goBack()
+    click: () => {
+      if (canNavigate()) mainWindow.webContents.goBack();
+    }
   },
   {
     label: '📥 Download',
