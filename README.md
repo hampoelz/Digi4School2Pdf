@@ -42,3 +42,9 @@ __❗ Should be fixed in v0.1.2. *If the problem persists please create an issue
 
 ## Disclaimer
 This project is for educational purposes only and it's illegal to download and/or use the generated PDF-files.
+
+## Screenshots
+![image](https://raw.githubusercontent.com/hampoelz/Digi4School2Pdf/main/screenshots/(1)%20view%20books.png)
+![image](https://raw.githubusercontent.com/hampoelz/Digi4School2Pdf/main/screenshots/(2)%20default%20viewer.png)
+![image](https://raw.githubusercontent.com/hampoelz/Digi4School2Pdf/main/screenshots/(3)%20download%20books.png)
+![image](https://raw.githubusercontent.com/hampoelz/Digi4School2Pdf/main/screenshots/(4)%20export%20pdf.png)
