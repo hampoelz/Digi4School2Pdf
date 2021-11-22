@@ -18,7 +18,7 @@ async function requestDownloadAsync(browserWindow, mode) {
     var bookSize = await requestBookSize(browserWindow);
     var bookTitle = await requestBookTitle(browserWindow);
 
-    if (!svgData.baseUri || !bookSize || !bookTitle) {
+    if (!svgData.baseUri || !bookSize) {
         dialog.showMessageBox(browserWindow, {
             type: 'info', title: 'Nothing found to download!', message: 'No book was found to download!', detail: 'Please go to a book that you want to download. If you\'ve already opened the book, please open an issue on Github and report that you cannot download this book.'
         });
@@ -29,7 +29,7 @@ async function requestDownloadAsync(browserWindow, mode) {
 
     var pathInput = await dialog.showSaveDialog({
         'filters': [{ 'name': 'PDF', 'extensions': ['pdf'] }],
-        'defaultPath': path.join(app.getPath('documents'), bookTitle + '.pdf')
+        'defaultPath': path.join(app.getPath('documents'), bookTitle ?? 'eBook' + '.pdf')
     });
 
     var filePath = pathInput.filePath;
