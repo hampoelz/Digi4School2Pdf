@@ -92,7 +92,11 @@ async function requestDownloadAsync(browserWindow, mode) {
                 await new Promise(resolve => ipcMain.once('PageLoaded', resolve));
 
                 var pageSvgData = await requestSvgData(browserWindow);
-                if (pageSvgData.baseUri) await addSvgToPdf(browserWindow, doc, bookSize, pageSvgData);
+                var pageSize = await requestBookSize(browserWindow);
+
+                if (!pageSize) pageSize = bookSize;
+
+                if (pageSvgData.baseUri) await addSvgToPdf(browserWindow, doc, pageSize, pageSvgData);
                 else {
                     loop = false;
 
