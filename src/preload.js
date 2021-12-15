@@ -9,37 +9,47 @@ ipcRenderer.on('request:Fetch', async (_, uri) => {
   ipcRenderer.send('Fetch', { ok: response.ok, status: response.status, statusText: response.statusText, arrayBuffer});
 });
 
-ipcRenderer.on('request:SvgData', () => {
-  var baseUri;
-  var content;
+ipcRenderer.on('request:SvgData', async () => {
+  var data = [];
 
-  var svgObject = window.document.getElementsByTagName('object')[0];
-  if (svgObject) {
-    var svgElement = svgObject.contentDocument.getElementsByTagName('svg')[0];
-    if (svgElement) {
-      baseUri = svgElement.baseURI;
-      if (baseUri) {
-        content = svgElement.outerHTML;
-      }
-    }
+  const svgObjects = window.document.querySelectorAll('object');
+
+  for (let i = 0; i < svgObjects.length; i++) {
+    data[i] = {};
+    data[i].uri = svgObjects[i].data;
+      
+    const svgResponse = await window.fetch(data[i].uri);
+    const svgArrayBuffer = await svgResponse.arrayBuffer();
+
+    data[i].content = svgArrayBuffer;
+
+    const decoder = new TextDecoder();
+    const parser = new DOMParser();
+
+    const svgData = decoder.decode(data[i].content);
+    const svgElement = parser.parseFromString(svgData, "image/svg+xml");
+    const viewBox = svgElement.documentElement.viewBox.baseVal;
+
+    const width = viewBox.width == 0 ? svgObjects[i].width : viewBox.width;
+    const height = viewBox.height == 0 ? svgObjects[i].height : viewBox.height;
+
+    data[i].size = [Number(width), Number(height)];
   }
 
-  ipcRenderer.send('SvgData', { baseUri, content });
+  ipcRenderer.send('SvgData', data);
 });
 
-ipcRenderer.on('request:BookSize', () => {
-  var size;
+ipcRenderer.on('request:PageLabel', () => {
+  let label = document.querySelector('#txtPage')?.value || document.querySelector('input')?.value;
+  let page = '';
 
-  var scriptTags = window.document.getElementsByTagName("script");
-  if(scriptTags) {
-    var scriptRegex = /[0-9]*,[0-9]*/gm;
-    var sizes = scriptRegex.exec(scriptTags[0].innerHTML);
-    if (sizes) {
-      size = [Number(sizes[0].split(',')[0]), Number(sizes[0].split(',')[1])];
-    }
+  if (label) {
+    label = label.replaceAll(' ', '');
+    let activePages = label.split('/')[0];
+    page = activePages.split('-')[0];
   }
 
-  ipcRenderer.send('BookSize', size);
+  ipcRenderer.send('PageLabel', page);
 });
 
 ipcRenderer.on('request:BookTitle', () => {
@@ -58,16 +68,14 @@ ipcRenderer.on('request:BookTitle', () => {
 ipcRenderer.on('wait:PageLoaded', () => {
   var isPageLoading = true;
 
-  var loadPage = window.document.getElementById('loadPage');
+  var loadPage = window.document.getElementById('loadPage') || document.getElementsByClassName('loader')[0];
   if (loadPage) {
     while (isPageLoading)
-      if (loadPage.style.display == 'none') isPageLoading = false;
+      if (loadPage.style.display != 'block') isPageLoading = false;
   }
 
   ipcRenderer.send('PageLoaded');
 });
-
-ipcRenderer.on('zoomOut', () => IDRViewer.zoomOut())
 
 ipcRenderer.on('manipulateContent', (_, message, { text, url }) => {
   var navigationElement = window.document.getElementById('mainNav');
@@ -86,7 +94,7 @@ ipcRenderer.on('manipulateContent', (_, message, { text, url }) => {
     overlayElement.style.display = 'block';
     overlayElement.style.width = '100%';
     overlayElement.style.height = '100%';
-    overlayElement.style.top = '39px';
+    overlayElement.style.top = '0';
     overlayElement.style.left = '0';
     overlayElement.style.right = '0';
     overlayElement.style.bottom = '0';
