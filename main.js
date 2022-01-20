@@ -133,7 +133,7 @@ var downloadMenu = Menu.buildFromTemplate([
     label: '💁 Help',
     submenu: [
       {
-        label: 'Pre-Release v' + app.getVersion()
+        label: 'Pre-Release v' + app.getVersion() + '-BETA'
       },
       {
         label: 'Releases',
