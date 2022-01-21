@@ -2,6 +2,39 @@ const { ipcRenderer } = require('electron');
 
 window.ipcRenderer = ipcRenderer;
 
+console.defaultLog = console.log.bind(console);
+console.defaultError = console.error.bind(console);
+console.defaultWarn = console.warn.bind(console);
+console.defaultDebug = console.debug.bind(console);
+
+console.logs = [];
+console.errors = [];
+console.warns = [];
+
+console.log = function () {
+  console.defaultLog.apply(console, arguments);
+  console.logs.push(Array.from(arguments));
+}
+
+console.error = function () {
+  console.defaultError.apply(console, arguments);
+  console.errors.push(Array.from(arguments));
+}
+
+console.warn = function () {
+  console.defaultWarn.apply(console, arguments);
+  console.warns.push(Array.from(arguments));
+}
+
+ipcRenderer.on('request:DebugData', () => {
+  ipcRenderer.send('DebugData', {
+    logs: console.logs,
+    warns: console.warns,
+    errors: console.errors,  
+    html: document.querySelector('html').outerHTML
+  });
+});
+
 ipcRenderer.on('request:Fetch', async (_, uri) => {
   var response = await window.fetch(uri);
   var arrayBuffer = await response.arrayBuffer();

@@ -1,8 +1,10 @@
-const { app, shell, dialog, nativeTheme, BrowserWindow, Menu } = require('electron');
+const { app, shell, dialog, nativeTheme, ipcMain, BrowserWindow, Menu } = require('electron');
 const downloader = require('./src/downloader');
 const path = require('path');
 
 nativeTheme.themeSource = 'light'
+
+const version = 'Pre-Release v' + app.getVersion() + '-BETA'
 
 // TODO: Add offline check
 
@@ -43,6 +45,49 @@ function canNavigate() {
     type: 'info', title: 'Download is running ...', message: 'Your book has not yet been fully downloaded!', detail: 'Please wait until your book has finished downloading.\n\nIf you want to cancel the download, you can simply close the window.'
   });
   return false;
+}
+
+async function collectDebugData() {
+  mainWindow.webContents.send('request:DebugData');
+  const debug = await new Promise(resolve => ipcMain.once('DebugData', (_, data) => resolve(data)));
+
+  const addSpoiler = (title, code, syntax) => [
+    '<details>',
+    `<summary>${title}</summary>`,
+    '',
+    '```' + syntax,
+    code,
+    '```',
+    '</details>'
+  ].join('\n')
+  const formatConsoleMessages = (title, console) => addSpoiler(title, console.join('\n```\n\n```\n'), '')
+
+  const pretty = require('pretty');
+  const debugString = [
+    '## Digi4School2Pdf DebugReport',
+    '**Version:** ' + version,
+    '**Page URL:** ' + mainWindow.webContents.getURL(),
+    formatConsoleMessages('Console Logs', debug.logs),
+    formatConsoleMessages('Console Warns', debug.warns),
+    formatConsoleMessages('Console Errors', debug.errors),
+    addSpoiler('Bare-bones HTML Page', pretty(
+      debug.html
+        .replace(/<script([\S\s]*?)>([\S\s]*?)<\/script>/ig, '<script />')
+        .replace(/<style([\S\s]*?)>([\S\s]*?)<\/style>/ig, '<style />'),
+      { ocd: true }), 'html')
+  ].join('\n');
+  
+  const msgBox = await dialog.showMessageBox(mainWindow, {
+    type: 'info',
+    title: 'Debug Report',
+    message: 'Provide debug data in your Issue',
+    detail: 'Copy this debug report to your clipboard and paste the information into your issue.',
+    buttons: ["Copy Debug Report", "Close"],
+  });
+
+  if (msgBox.response == 0) {
+    require('child_process').spawn('clip').stdin.end(debugString);
+  }
 }
 
 var downloadMenu = Menu.buildFromTemplate([
@@ -133,11 +178,18 @@ var downloadMenu = Menu.buildFromTemplate([
     label: '💁 Help',
     submenu: [
       {
-        label: 'Pre-Release v' + app.getVersion() + '-BETA'
+        label: version
       },
       {
         label: 'Releases',
         click: async () => await shell.openExternal('https://github.com/hampoelz/Digi4School2Pdf/releases')
+      },
+      {
+        type: 'separator'
+      },
+      {
+        label: 'Debug Report',
+        click: async () => await collectDebugData()
       },
       {
         type: 'separator'
