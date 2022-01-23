@@ -32,6 +32,7 @@
     "electron-builder": "^22.14.0"
   },
   "dependencies": {
+    "first-run": "^2.0.0",
     "jsdom": "^19.0.0",
     "pdfkit": "^0.13.0",
     "pretty": "^2.0.0",

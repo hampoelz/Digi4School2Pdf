@@ -1,5 +1,6 @@
 const { app, shell, dialog, nativeTheme, ipcMain, BrowserWindow, Menu } = require('electron');
 const downloader = require('./src/downloader');
+const isFirstRun = require('first-run');
 const path = require('path');
 
 nativeTheme.themeSource = 'light'
@@ -41,6 +42,12 @@ app.on('ready', () => {
     mainWindow.loadURL(url);
   });
   Menu.setApplicationMenu(downloadMenu);
+
+  if (isFirstRun({name: 'Digi4School2Pdf'})) {
+    dialog.showMessageBox(mainWindow, {
+      type: 'warning', title: 'Digi4School2Pdf FirstStart', message: 'Disclaimer', detail: 'This project is for private/educational purposes only and it is illegal to duplicate eBooks as well as share, print and / or publish the generated PDF files. You may only download and use books that you own and which are not subject to a copy protection. Once you lose the right to use the books, all related files have to be deleted.'
+    })
+  }
 });
 
 app.on('window-all-closed', () => {
