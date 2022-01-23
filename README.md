@@ -35,10 +35,7 @@ That happens because these files are not signed - that would cost too much money
 6. Wait until the App has everything downloaded
 7. The App will automatic open the PDF when it's ready
 
-__The PDF is broken, what should I do?__  
-You can try to use the free pdf repairer [ilovepdf.com/repair-pdf](https://www.ilovepdf.com/repair-pdf)
-
-__❗ Should be fixed in v0.1.2. *If the problem persists please create an issue.*__
+__❗ *If there are problems downloading, please create an issue.*__
 
 ## Disclaimer
 This project is for **private/educational use only** and it is **illegal to share, print and / or publish** the generated PDF files.
