@@ -37,6 +37,14 @@ That happens because these files are not signed - that would cost too much money
 
 __❗ *If there are problems downloading, please create an issue.*__
 
+## Supported Libraries
+- [x] [DIGI4SCHOOL Bücherregal](https://digi4school.at/)
+- [x] [TRAUNER-DigiBox](https://www.trauner-digibox.com/)
+- [x] [HPT-Bücherregal](https://hpthek.at/)
+- [x] [HELBLING e-zone](https://www.helbling-ezone.com/)
+- [x] [scook - Die online VERITAS-Plattform](https://www.scook.at/)
+- [x] [öbv - Österreichischer Bundesverlag](https://www.oebv.at/)
+
 ## Disclaimer
 This project is for **private/educational use only** and it is **illegal to share, print and / or publish** the generated PDF files.
 You may only download and use books that you own. Once you **lose the right** to use the books, **all related files must be deleted**. 
