@@ -125,7 +125,7 @@ async function requestDownloadAsync(browserWindow, mode) {
         }
     }
 
-    browserWindow.setResizable(false);
+    browserWindow.setResizable(true);
 
     manipulateContent(browserWindow, 'Save Pdf file ...');
     doc.end()
