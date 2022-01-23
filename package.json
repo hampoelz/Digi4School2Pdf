@@ -1,7 +1,7 @@
 {
   "name": "digi4school2pdf",
   "productName": "Digi4School Downloader",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Download E-Books from Digi4School as PDF",
   "main": "main.js",
   "scripts": {
