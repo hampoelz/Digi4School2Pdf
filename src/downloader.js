@@ -220,7 +220,7 @@ async function goToPageAsync(webContents, page, loadMethod) {
     if (!isPageParam && page != undefined) {
         let prefix = '';
         if (params == undefined) prefix = '?';
-        if (params.length > 0) prefix = '&'
+        if (params?.length > 0) prefix = '&'
         pageUrl += `${prefix}page=${page}`;
     }
 
