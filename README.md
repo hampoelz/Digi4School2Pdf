@@ -46,8 +46,8 @@ __❗ *If there are problems downloading, please create an issue.*__
 - [x] [öbv - Österreichischer Bundesverlag](https://www.oebv.at/)
 
 ## Disclaimer
-This project is for **private/educational use only** and it is **illegal to share, print and / or publish** the generated PDF files.
-You may only download and use books that you own. Once you **lose the right** to use the books, **all related files must be deleted**. 
+This project is for **private/educational purposes only** and it is **illegal to duplicate eBooks as well as share, print and / or publish** the generated PDF files.
+You may only download and use books that you own and **which are not subject to a copy protection**. Once you **lose the right** to use the books, **all related files have to be deleted**. 
 
 ## Screenshots
 ![image](https://raw.githubusercontent.com/hampoelz/Digi4School2Pdf/main/screenshots/(1)%20view%20books.png)
