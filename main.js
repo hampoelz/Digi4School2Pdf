@@ -8,6 +8,9 @@ const version = 'Pre-Release v' + app.getVersion() + '-BETA'
 
 // TODO: Add offline check
 
+// https://github.com/hampoelz/Digi4School2Pdf/issues/9
+app.commandLine.appendSwitch("disable-http-cache");
+
 let mainWindow;
 
 const options = {
