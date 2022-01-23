@@ -14,9 +14,9 @@ async function requestDownloadAsync(browserWindow, mode) {
     }
 
     var bookTitle = await requestBookTitle(browserWindow);
-    var svgData = await requestSvgData(browserWindow);
+    var currentPageData = await requestPageData(browserWindow);
     
-    if (svgData.length <= 0) {
+    if (!currentPageData || currentPageData.length <= 0) {
         dialog.showMessageBox(browserWindow, {
             type: 'info', title: 'Nothing found to download!', message: 'No book was found to download!', detail: 'Please go to a book that you want to download. If you\'ve already opened the book, please open an issue on Github and report that you cannot download this book.'
         });
@@ -60,52 +60,63 @@ async function requestDownloadAsync(browserWindow, mode) {
 
     doc.pipe(writeStream);
 
+    // Depending on the window size, oebv switches between double and single page views, so disable resizing
+    browserWindow.setResizable(false);
+
     if (mode == 'page') {
         manipulateContent(browserWindow, 'Downloading current page ...');
         try {
-            for (const data of svgData) {
-                await addSvgToPdf(browserWindow, doc, data)
+            for (const data of currentPageData) {
+                await addToPdf(browserWindow, doc, data)
             }
         } catch (error) {    
             showDownloadError(error);
+            console.log(error);
             return;
         }
     } else if (mode == 'book') {
         manipulateContent(browserWindow, 'Start downloading book ...');
         var loop = true;
-        var previousSvgUri;
+        var firstDataUri;       // Check if book starts over 
+        var previousDataUri;
 
         // Start with page -1 and skip 0 to prevent helbling-ezone from reloading
         for (var page = -1; loop; page++) {
             if (page == 0) continue;
             try {
-                manipulateContent(browserWindow, `Load next page ...`);
-                await goToPage(browserWindow, page);
+                const loadNextPageMsg = () => manipulateContent(browserWindow, `Load next page ...`);
 
+                loadNextPageMsg();
+                await goToPage(browserWindow, page, loadNextPageMsg);
+                
+                loadNextPageMsg();
                 browserWindow.webContents.send('wait:PageLoaded');
                 await new Promise(resolve => ipcMain.once('PageLoaded', resolve));
 
                 var pageLabel = await requestPageLabel(browserWindow);
-                manipulateContent(browserWindow, `Downloading page ${pageLabel} ...`);
+                console.log(pageLabel)
 
-                var pageSvgData = await requestSvgData(browserWindow);
-                if (pageSvgData.length > 0 && pageSvgData[0].uri != previousSvgUri) {
+                manipulateContent(browserWindow, `Downloading page ${pageLabel} ...`);
+                var pageData = await requestPageData(browserWindow);
+                if (pageData?.length > 0 && pageData[0]?.uri != previousDataUri && pageData[0]?.uri != firstDataUri) {
                     let pageNumber = Number(pageLabel);
-                    for (const data of pageSvgData) {
+                    for (const data of pageData) {
                         if (!Number.isNaN(pageNumber)) {
                             manipulateContent(browserWindow, `Downloading page ${pageNumber} ...`);
                             pageNumber++;
                         }
                         
-                        if (!data.size) data.size = svgData.size;
-                        await addSvgToPdf(browserWindow, doc, data);
+                        if (!data.size) data.size = currentPageData.size;
+                        await addToPdf(browserWindow, doc, data);
                     }
-                    previousSvgUri = pageSvgData[0].uri;
-                    page += pageSvgData.length - 1;
-                } else if (page > 0) /* Most books start with page 1, so go ahead if no data was found */ {
+                    if (!previousDataUri) firstDataUri = pageData[0].uri;
+                    previousDataUri = pageData[0].uri;
+                    page += pageData.length - 1;
+                } else if (page > 1) /* Most books start with page 1, so go ahead if no data was found */ {
                     loop = false;
                     await goToPage(browserWindow);
                 }
+                console.log(page);
             } catch (error) {
                 loop = false;
                 showDownloadError(error);
@@ -114,11 +125,13 @@ async function requestDownloadAsync(browserWindow, mode) {
         }
     }
 
+    browserWindow.setResizable(false);
+
     manipulateContent(browserWindow, 'Save Pdf file ...');
     doc.end()
 }
 
-async function goToPage(browserWindow, page) {
+async function goToPage(browserWindow, page, loadMethod) {
     let pageUrl = browserWindow.webContents.getURL();
     const params = pageUrl.split('?')[1];
 
@@ -135,6 +148,7 @@ async function goToPage(browserWindow, page) {
     }
 
     browserWindow.loadURL(pageUrl);
+    if (loadMethod instanceof Function) loadMethod();
     await new Promise(resolve => browserWindow.webContents.once('did-stop-loading', resolve));
 }
 
@@ -147,9 +161,9 @@ async function requestFetch(browserWindow, url) {
     return await new Promise(resolve => ipcMain.once('Fetch', (_, response) => resolve(response)));
 }
 
-async function requestSvgData(browserWindow) {
-    browserWindow.webContents.send('request:SvgData');
-    return await new Promise(resolve => ipcMain.once('SvgData', (_, data) => resolve(data)));
+async function requestPageData(browserWindow) {
+    browserWindow.webContents.send('request:PageData');
+    return await new Promise(resolve => ipcMain.once('PageData', (_, data) => resolve(data)));
 }
 
 async function requestPageLabel(browserWindow) {
@@ -208,7 +222,18 @@ async function addSvgToPdf(browserWindow, doc, svgData) {
     });
 }
 
+async function addToPdf(browserWindow, doc, data) {
+    switch (data.type) {
+        case "svg":
+            await addSvgToPdf(browserWindow, doc, data);
+            break;
+        case "img":
+            doc.addPage({ size: data.size });
+            doc.image(data.content, 0, 0);
+            break;
+    }
+}
+
 module.exports = {
-    requestDownloadAsync,
-    addSvgToPdf
+    requestDownloadAsync
 };

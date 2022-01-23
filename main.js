@@ -51,30 +51,28 @@ async function collectDebugData() {
   mainWindow.webContents.send('request:DebugData');
   const debug = await new Promise(resolve => ipcMain.once('DebugData', (_, data) => resolve(data)));
 
-  const addSpoiler = (title, code, syntax) => [
+  const addSpoiler = (title, code, syntax = '') => [
     '<details>',
     `<summary>${title}</summary>`,
     '',
     '```' + syntax,
-    code,
+    [...code].join('\n```\n\n```' + syntax + '\n'),
     '```',
     '</details>'
   ].join('\n')
-  const formatConsoleMessages = (title, console) => addSpoiler(title, console.join('\n```\n\n```\n'), '')
 
   const pretty = require('pretty');
   const debugString = [
     '## Digi4School2Pdf DebugReport',
     '**Version:** ' + version,
     '**Page URL:** ' + mainWindow.webContents.getURL(),
-    formatConsoleMessages('Console Logs', debug.logs),
-    formatConsoleMessages('Console Warns', debug.warns),
-    formatConsoleMessages('Console Errors', debug.errors),
-    addSpoiler('Bare-bones HTML Page', pretty(
-      debug.html
-        .replace(/<script([\S\s]*?)>([\S\s]*?)<\/script>/ig, '<script />')
-        .replace(/<style([\S\s]*?)>([\S\s]*?)<\/style>/ig, '<style />'),
-      { ocd: true }), 'html')
+    addSpoiler('Console Logs', debug.logs),
+    addSpoiler('Console Warns', debug.warns),
+    addSpoiler('Console Errors', debug.errors),
+    addSpoiler('Bare-bones HTML Page', debug.html.map(html => pretty(html
+      .replace(/<script([\S\s]*?)>([\S\s]*?)<\/script>/ig, '<script />')
+      .replace(/<style([\S\s]*?)>([\S\s]*?)<\/style>/ig, '<style />'),
+      { ocd: true })), 'html')
   ].join('\n');
   
   const msgBox = await dialog.showMessageBox(mainWindow, {
