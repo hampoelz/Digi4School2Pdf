@@ -1,5 +1,5 @@
 # 📥 Digi4School2Pdf
-➡ Downloading eBooks from Digi4School as PDF has never been easier
+➡ Downloading eBooks from Digi4School as PDF has never been easier ([❗ Read Disclaimer ❗](https://github.com/hampoelz/Digi4School2Pdf#Disclaimer))
 
 ## Requirements
 - A Windows computer (32 or 64 bit)
@@ -41,7 +41,8 @@ You can try to use the free pdf repairer [ilovepdf.com/repair-pdf](https://www.i
 __❗ Should be fixed in v0.1.2. *If the problem persists please create an issue.*__
 
 ## Disclaimer
-This project is for educational purposes only and it's illegal to download and/or use the generated PDF-files.
+This project is for **private/educational use only** and it is **illegal to share, print and / or publish** the generated PDF files.
+You may only download and use books that you own. Once you **lose the right** to use the books, **all related files must be deleted**. 
 
 ## Screenshots
 ![image](https://raw.githubusercontent.com/hampoelz/Digi4School2Pdf/main/screenshots/(1)%20view%20books.png)
