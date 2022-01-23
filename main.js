@@ -81,7 +81,7 @@ async function collectDebugData() {
       .replace(/<style([\S\s]*?)>([\S\s]*?)<\/style>/ig, '<style />'),
       { ocd: true })), 'html')
   ].join('\n');
-  
+
   const msgBox = await dialog.showMessageBox(mainWindow, {
     type: 'info',
     title: 'Debug Report',
@@ -101,6 +101,47 @@ var downloadMenu = Menu.buildFromTemplate([
     click: () => {
       if (canNavigate()) mainWindow.loadURL('https://digi4school.at/');
     }
+  },
+  {
+    label: '🌐 Go To Library',
+    submenu: [
+      {
+        label: '🟦 DIGI4SCHOOL Bücherregal',
+        click: () => {
+          if (canNavigate()) mainWindow.loadURL('https://digi4school.at/');
+        }
+      },
+      {
+        label: '🟥 TRAUNER-DigiBox',
+        click: () => {
+          if (canNavigate()) mainWindow.loadURL('https://www.trauner-digibox.com/');
+        }
+      },
+      {
+        label: '🟩 HPT-Bücherregal',
+        click: () => {
+          if (canNavigate()) mainWindow.loadURL('https://hpthek.at/');
+        }
+      },
+      {
+        label: '🟨 HELBLING e-zone',
+        click: () => {
+          if (canNavigate()) mainWindow.loadURL('https://www.helbling-ezone.com/');
+        }
+      },
+      {
+        label: '🟦 scook - Die online VERITAS-Plattform',
+        click: () => {
+          if (canNavigate()) mainWindow.loadURL('https://www.scook.at/');
+        }
+      },
+      {
+        label: '🟧 öbv - Österreichischer Bundesverlag',
+        click: () => {
+          if (canNavigate()) mainWindow.loadURL('https://www.oebv.at/');
+        }
+      }
+    ]
   },
   {
     label: '🔙 Go Back',
