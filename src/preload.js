@@ -1,252 +1,48 @@
 const { ipcRenderer } = require('electron');
+const parser = require('./parser');
 
-window.ipcRenderer = ipcRenderer;
-
-console.defaultLog = console.log.bind(console);
-console.defaultError = console.error.bind(console);
-console.defaultWarn = console.warn.bind(console);
-console.defaultDebug = console.debug.bind(console);
-
-console.logs = [];
-console.errors = [];
-console.warns = [];
-
-console.log = function () {
-  console.defaultLog.apply(console, arguments);
-  console.logs.push(Array.from(arguments));
+ipcRenderer.handle = function (channel, listener) {
+  this.on('request:' + channel, async (...details) => {
+    const data = await listener(...details)
+    this.send('result:' + channel, data);
+  });
 }
 
-console.error = function () {
-  console.defaultError.apply(console, arguments);
-  console.errors.push(Array.from(arguments));
+const debug = {
+  logs: [],
+  warns: [],
+  errors: []
 }
 
-console.warn = function () {
-  console.defaultWarn.apply(console, arguments);
-  console.warns.push(Array.from(arguments));
-}
+consoleLogger(debug.logs, debug.warns, debug.errors);
 
-ipcRenderer.on('request:DebugData', async () => {
-  const htmlData = await frameLoop(dom => dom.querySelector('html').outerHTML);
-  ipcRenderer.send('DebugData', {
-    logs: console.logs,
-    warns: console.warns,
-    errors: console.errors,  
+ipcRenderer.handle('DebugData', async () => {
+  const htmlData = await frameLoopAsync(dom => dom.querySelector('html').outerHTML);
+  
+  return {
+    logs: debug.logs,
+    warns: debug.warns,
+    errors: debug.errors,
     html: htmlData
-  });
-});
-
-ipcRenderer.on('request:Fetch', async (_, uri) => {
-  var response = await window.fetch(uri);
-  var arrayBuffer = await response.arrayBuffer();
-
-  ipcRenderer.send('Fetch', { ok: response.ok, status: response.status, statusText: response.statusText, arrayBuffer});
-});
-
-const algorithm = {
-  svgDetection: {
-    libraries: ["digi4school", "trauner-digibox", "hpthek", "helbling-ezone"],
-    parser: async dom => {
-      let data = [];
-
-      if (!dom) return data;
-      const svgObjects = dom.querySelectorAll('object');
-
-      for (let page = 0; page < svgObjects.length; page++) {
-        const uri = svgObjects[page].data;
-        let pageData = await processSvg(uri);
-
-        if (pageData.size[0] == 0) pageData.size[0] = Number(svgObjects[page].width);
-        if (pageData.size[1] == 0) pageData.size[1] = Number(svgObjects[page].height);
-
-        data[page] = pageData;
-      }
-
-      return data;
-    },
-    isPageLoaded: dom => {
-      const contentContainer = dom.querySelector('#contentContainer');
-      const pages = dom.querySelectorAll('object');
-
-      const pageExists = contentContainer ? contentContainer.children.length > 0 : true; // Skip if there's no container
-
-      // return true when page doesn't exist or pages exists and is loaded
-      return !pageExists || pages.length > 0 && pages.length <= 2;
-    },
-    getPageLabel: dom => dom.querySelector('#txtPage')?.value || dom.querySelector('input')?.value,
-    getBookTitle: dom => [...dom.querySelectorAll('meta')].find(meta => meta.name == 'title')?.content || dom.title
-  },
-  imgDetection_scook: {
-    libraries: ['scook'],
-    parser: async dom => {
-      let data = [];
-
-      if (!dom) return data;
-      const imgElements = dom.querySelectorAll(".pages-wrapper img");
-
-      for (let page = 0; page < imgElements.length; page++) {
-        const uri = imgElements[page].src;
-        const pageData = await processImg(uri);
-        data[page] = pageData;
-      }
-
-      return data;
-    },
-    isPageLoaded: dom => {
-      const pages = dom.querySelectorAll('.pages-wrapper img');
-      return pages.length > 0 && pages.length <= 2;
-    },
-    getPageLabel: dom => dom.querySelector('input.current-page')?.placeholder,
-    getBookTitle: dom => dom.title
-  },
-  imgDetection_oebv: {
-    libraries: ['oebv'],
-    parser: async dom => {
-      let data = [];
-      
-      if (!dom) return data;
-      const imgElements = dom.querySelectorAll('.image-layers');
-
-      for (let page = 0; page < imgElements.length; page++) {
-        const imgContainerList = imgElements[page];
-        const imgContainer = imgContainerList.children[imgContainerList.children.length - 1]; // Highest resolution
-        const imgSrc = getComputedStyle(imgContainer.firstChild).backgroundImage.match(/url\(["']?([^"']*)["']?\)/)[1];
-        
-        const uri = imgSrc;
-        const pageData = await processImg(uri);
-        data[page] = pageData;
-      }
-
-      // Manipulate User Settings to prevent page jumping
-      for (var i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        const item = localStorage.getItem(key);
-        const settings = (() => {
-          try {
-            const json = JSON.parse(item);
-            if (json && json instanceof Object) return json;
-          } catch { }
-
-          return;
-        })()
-
-        if (!settings || !settings.rememberLastPage) continue;
-        settings.rememberLastPage.enabled = false;
-        settings.welcome.enabled = false;
-        window.localStorage.setItem(key, JSON.stringify(settings));
-      }
-
-      return data;
-    },
-    isPageLoaded: dom => {
-      const currentPage = window.location.href.split('?')[1]?.split('&')
-        .find(item => item.split('=')[0] == 'page')
-        .split('=')[1] ?? '0';
-      
-      const pageIdQuery = Number(currentPage) > 1 ? `[id ^= '_hx_']` : '';
-      const expectedPages = [...dom.querySelectorAll('.page' + pageIdQuery)];
-
-      const pages = [...dom.querySelectorAll('.page')];
-      const notExpectedPages = pages.filter(page => !expectedPages.includes(page));
-
-      return notExpectedPages.length == 0 && expectedPages.length > 0 && expectedPages.length <= 2;
-    },
-    getPageLabel: dom => dom.querySelector('.gauge')?.innerText,
-    getBookTitle: dom => dom.querySelector('title')?.dataset.original
   }
-}
-
-async function processSvg(uri) {
-  let data = {};
-  data.uri = uri;
-
-  const svgResponse = await window.fetch(data.uri);
-  const svgArrayBuffer = await svgResponse.arrayBuffer();
-
-  data.content = svgArrayBuffer;
-
-  const decoder = new TextDecoder();
-  const parser = new DOMParser();
-
-  const svgData = decoder.decode(data.content);
-  const svgElement = parser.parseFromString(svgData, "image/svg+xml");
-  const viewBox = svgElement.documentElement.viewBox.baseVal;
-
-  const width = viewBox.width;
-  const height = viewBox.height;
-
-  data.size = [Number(width), Number(height)];
-  data.type = 'svg';
-  return data;
-}
-
-async function processImg(uri) {
-  let data = {};
-  data.uri = uri;
-
-  const imgResponse = await window.fetch(data.uri);
-  const imgArrayBuffer = await imgResponse.arrayBuffer();
-
-  data.content = imgArrayBuffer;
-
-  const img = new Image();
-
-  const size = await new Promise(resolve => {
-    img.onload = function () {
-      resolve({ width: this.width, height: this.height })
-    }
-    img.src = data.uri;
-  });
-
-  data.size = [Number(size.width), Number(size.height)];
-  data.type = 'img';
-  return data;
-}
-
-function selectAlgorithm() {
-  const host = window.location.origin;
-  let result;
-
-  Object.entries(algorithm).forEach(detection => {
-    if (detection[1].libraries.some(library => host.includes(library))) result = detection[1];
-  });
-
-  return result;
-}
-
-async function frameLoop(method) {
-  if (!(method instanceof Function)) return;
-  let results = [];
-
-  results[0] = await method(window.document);
-
-  const frames = window.document.querySelectorAll('iframe');
-  for (let i = 0; i <= frames.length; i++) {
-    const frame = frames[i];
-    if (!frame?.contentDocument) continue;
-    results[i+1] = await method(frame.contentDocument);
-  }
-
-  // remove duplicates, undefined and empty values
-  results = [...new Set(results)].filter(result => result != undefined && result !== '')
-
-  return results;
-}
-
-ipcRenderer.on('request:PageData', async () => {
-  const algorithm = selectAlgorithm();
-  const parse = algorithm.parser;
-  const dataSet = await frameLoop(parse); // [[], [], ...]
-  const data = dataSet.filter(data => Array.isArray(data) && data.length > 0)[0]
-  ipcRenderer.send('PageData', data);
 });
 
-ipcRenderer.on('request:PageLabel', async () => {
-  const algorithm = selectAlgorithm();
-  const getLabel = algorithm.getPageLabel;
+ipcRenderer.handle('PageData', async () => {
+  const parser = selectParser();
+  const getData = parser.getPageData;
 
-  const labelSet = await frameLoop(getLabel);
-  const label = labelSet.filter(label => typeof label == 'string')[0]
+  const dataSet = await frameLoopAsync(getData); // [[], [], ...]
+  const data = dataSet.filter(data => Array.isArray(data) && data.length > 0)[0];
+
+  return data;
+});
+
+ipcRenderer.handle('PageLabel', async () => {
+  const parser = selectParser();
+  const getLabel = parser.getPageLabel;
+
+  const labelSet = await frameLoopAsync(getLabel);
+  const label = labelSet.filter(label => typeof label == 'string')[0];
   let page = '';
 
   if (label)
@@ -255,39 +51,54 @@ ipcRenderer.on('request:PageLabel', async () => {
       .split('/')[0]
       .split('-')[0];
 
-  ipcRenderer.send('PageLabel', page);
+  return page;
 });
 
-ipcRenderer.on('request:BookTitle', async () => {
-  const algorithm = selectAlgorithm();
-  const getTitle = algorithm.getBookTitle;
+ipcRenderer.handle('BookTitle', async () => {
+  const parser = selectParser();
+  const getTitle = parser.getBookTitle;
 
-  let titleSet = await frameLoop(getTitle);
-  titleSet = titleSet.filter(title => typeof title == 'string')
-  const title = titleSet[1] ?? titleSet[0]
+  let titleSet = await frameLoopAsync(getTitle);
+  titleSet = titleSet.filter(title => typeof title == 'string');
+  const title = titleSet[1] ?? titleSet[0];
 
-  ipcRenderer.send('BookTitle', title);
+  return title;
 });
 
-ipcRenderer.on('wait:PageLoaded', async () => {
-  const algorithm = selectAlgorithm();
-  const isLoaded = algorithm.isPageLoaded;
+ipcRenderer.handle('PageLoaded', async () => {
+  const parser = selectParser();
+  const isLoaded = parser.isPageLoaded;
 
-  await new Promise(resolve => {
-    setTimeout(() => resolve(), 60000)
-    var check = setInterval(async () => {
-      const isLoadedSet = await frameLoop(isLoaded);
+  const result = await new Promise(resolve => {
+    setTimeout(() => resolve(false), 120_000);
+
+    let check = setInterval(async () => {
+      const isLoadedSet = await frameLoopAsync(isLoaded);
       const loaded = isLoadedSet.filter(loaded => typeof loaded == 'boolean').includes(true);
+
       if (loaded) {
         clearInterval(check);
-        resolve();
+        resolve(true);
       }
-    }, 50);
+    }, 100);
   });
 
-  ipcRenderer.send('PageLoaded');
+  return result;
 });
 
+ipcRenderer.handle('Fetch', async (_, uri) => {
+  const response = await window.fetch(uri);
+  const arrayBuffer = await response.arrayBuffer();
+
+  return {
+    ok: response.ok,
+    status: response.status,
+    statusText: response.statusText,
+    arrayBuffer: arrayBuffer
+  }
+});
+
+// TODO: Modernize UI
 ipcRenderer.on('manipulateContent', (_, message, { text, url }) => {
   var overlayElement = window.document.getElementById('download-overlay');
   var messageElement = window.document.getElementById('download-message');
@@ -309,7 +120,7 @@ ipcRenderer.on('manipulateContent', (_, message, { text, url }) => {
     overlayElement.style.backdropFilter = 'blur(6px)';
 
     let maxZ = Math.max.apply(null,
-      [...document.querySelectorAll('body *')]
+      [...window.document.querySelectorAll('body *')]
         .map(element => {
           let style = getComputedStyle(element);
           if (style.position != 'static') return (parseInt(style.zIndex) || 1);
@@ -362,3 +173,55 @@ ipcRenderer.on('manipulateContent', (_, message, { text, url }) => {
 
   messageElement.innerHTML = message;
 });
+
+function consoleLogger(logArray = [], warnArray = [], errorArray = []) {
+  console.defaultLog = console.log.bind(console);
+  console.defaultWarn = console.warn.bind(console);
+  console.defaultError = console.error.bind(console);
+
+  console.log = function () {
+    console.defaultLog.apply(console, arguments);
+    logArray.push(Array.from(arguments));
+  }
+
+  console.error = function () {
+    console.defaultError.apply(console, arguments);
+    warnArray.push(Array.from(arguments));
+  }
+
+  console.warn = function () {
+    console.defaultWarn.apply(console, arguments);
+    errorArray.push(Array.from(arguments));
+  }
+}
+
+function selectParser() {
+  const host = window.location.origin;
+  let result;
+
+  Object.entries(parser).forEach(detection => {
+    if (detection[1].libraries.some(library => host.includes(library)))
+      result = detection[1];
+  });
+
+  return result;
+}
+
+async function frameLoopAsync(method) {
+  if (!(method instanceof Function)) return;
+  let results = [];
+
+  results[0] = await method(window.document);
+
+  const frames = window.document.querySelectorAll('iframe');
+  for (let i = 0; i <= frames.length; i++) {
+    const frame = frames[i];
+    if (!frame?.contentDocument) continue;
+    results[i + 1] = await method(frame.contentDocument);
+  }
+
+  // remove duplicates, undefined and empty values
+  results = [...new Set(results)].filter(result => result != undefined && result !== '');
+
+  return results;
+}

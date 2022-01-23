@@ -12,18 +12,28 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/hampoelz/Digi4School-Downloader.git"
+    "url": "https://github.com/hampoelz/Digi4School2Pdf.git"
   },
   "keywords": [
-    "Digi4School",
+    "pdf",
+    "eBook",
+    "e-book",
+    "download",
+    "downloader",
+    "converter",
+    "Digi4Pdf",
     "Digi4School2Pdf",
-    "Digi4School to pdf",
-    "Digi4School downloader",
-    "Digi4School PDF downloader"
+    "Digi4SchoolToPdf",
+    "DIGI4SCHOOL",
+    "TRAUNER-DigiBox",
+    "HPThek",
+    "HELBLING e-zone",
+    "scook",
+    "oebv"
   ],
   "author": {
     "name": "Rene Hampölz",
-    "email": "service@hampoelz.net"
+    "email": "rene@hampoelz.net"
   },
   "homepage": "https://hampoelz.net/",
   "license": "MIT",
@@ -39,9 +49,9 @@
     "svg-to-pdfkit": "^0.1.8"
   },
   "build": {
-    "appId": "net.hampoelz.digi4school2pdf.desktop",
+    "appId": "net.hampoelz.digi4school2pdf",
     "productName": "Digi4School2Pdf",
-    "copyright": "Copyright © 2020 Rene Hampölz",
+    "copyright": "Copyright © 2022 Rene Hampölz",
     "win": {
       "target": [
         {
@@ -59,7 +69,7 @@
         }
       ],
       "icon": "build/icon.png",
-      "legalTrademarks": "Copyright © 2020 Rene Hampölz",
+      "legalTrademarks": "Copyright © 2022 Rene Hampölz",
       "publisherName": "Rene Hampölz"
     },
     "appx": {

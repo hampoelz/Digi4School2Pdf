@@ -3,14 +3,15 @@ const downloader = require('./src/downloader');
 const isFirstRun = require('first-run');
 const path = require('path');
 
-nativeTheme.themeSource = 'light'
-
-const version = 'Pre-Release v' + app.getVersion() + '-BETA'
+const version = 'Pre-Release v' + app.getVersion() + '-BETA';
 
 // TODO: Add offline check
+// TODO: Modernize UI
 
 // https://github.com/hampoelz/Digi4School2Pdf/issues/9
 app.commandLine.appendSwitch("disable-http-cache");
+
+nativeTheme.themeSource = 'light';
 
 let mainWindow;
 
@@ -20,7 +21,7 @@ const options = {
   width: 880,
   height: 860,
   backgroundColor: '#67C6EE',
-  icon: path.join(__dirname, 'src', 'icon.png'),
+  icon: path.join(__dirname, 'build', 'icon.png'),
   center: true,
   show: true,
   webPreferences: {
@@ -31,22 +32,31 @@ const options = {
 };
 
 app.on('ready', () => {
+  Menu.setApplicationMenu(downloadMenu);
+
   mainWindow = new BrowserWindow(options);
+  mainWindow.webContents.setWindowOpenHandler(details => {
+    mainWindow.loadURL(details.url);
+    return { action: 'deny' };
+  });
+
+  mainWindow.webContents.invoke = function (channel, ...args) {
+    this.send('request:' + channel, ...args);
+    return new Promise(resolve => ipcMain.once('result:' + channel, (_, data) => resolve(data)));;
+  }
 
   // Change user agent to avoid showing up in analyses
   mainWindow.webContents.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36');
 
   mainWindow.loadURL('https://digi4school.at/');
-  mainWindow.webContents.on('new-window', (event, url) => {
-    event.preventDefault();
-    mainWindow.loadURL(url);
-  });
-  Menu.setApplicationMenu(downloadMenu);
 
   if (isFirstRun({name: 'Digi4School2Pdf'})) {
     dialog.showMessageBox(mainWindow, {
-      type: 'warning', title: 'Digi4School2Pdf FirstStart', message: 'Disclaimer', detail: 'This project is for private/educational purposes only and it is illegal to duplicate eBooks as well as share, print and / or publish the generated PDF files. You may only download and use books that you own and which are not subject to a copy protection. Once you lose the right to use the books, all related files have to be deleted.'
-    })
+      type: 'warning',
+      title: 'Digi4School2Pdf FirstStart',
+      message: 'Disclaimer',
+      detail: 'This project is for private/educational purposes only and it is illegal to duplicate eBooks as well as share, print and / or publish the generated PDF files. You may only download and use books that you own and which are not subject to a copy protection. Once you lose the right to use the books, all related files have to be deleted.'
+    });
   }
 });
 
@@ -55,16 +65,15 @@ app.on('window-all-closed', () => {
 });
 
 function canNavigate() {
-  if (!mainWindow.isDownloading) return true;
+  if (!mainWindow.webContents.isDownloading) return true;
   dialog.showMessageBox(mainWindow, {
     type: 'info', title: 'Download is running ...', message: 'Your book has not yet been fully downloaded!', detail: 'Please wait until your book has finished downloading.\n\nIf you want to cancel the download, you can simply close the window.'
   });
   return false;
 }
 
-async function collectDebugData() {
-  mainWindow.webContents.send('request:DebugData');
-  const debug = await new Promise(resolve => ipcMain.once('DebugData', (_, data) => resolve(data)));
+async function collectDebugDataAsync() {
+  const debugData = await mainWindow.webContents.invoke('DebugData');
 
   const addSpoiler = (title, code, syntax = '') => [
     '<details>',
@@ -74,17 +83,17 @@ async function collectDebugData() {
     [...code].join('\n```\n\n```' + syntax + '\n'),
     '```',
     '</details>'
-  ].join('\n')
+  ].join('\n');
 
   const pretty = require('pretty');
   const debugString = [
     '## Digi4School2Pdf DebugReport',
     '**Version:** ' + version,
     '**Page URL:** ' + mainWindow.webContents.getURL(),
-    addSpoiler('Console Logs', debug.logs),
-    addSpoiler('Console Warns', debug.warns),
-    addSpoiler('Console Errors', debug.errors),
-    addSpoiler('Bare-bones HTML Page', debug.html.map(html => pretty(html
+    addSpoiler('Console Logs', debugData.logs),
+    addSpoiler('Console Warns', debugData.warns),
+    addSpoiler('Console Errors', debugData.errors),
+    addSpoiler('Bare-bones HTML Page', debugData.html.map(html => pretty(html
       .replace(/<script([\S\s]*?)>([\S\s]*?)<\/script>/ig, '<script />')
       .replace(/<style([\S\s]*?)>([\S\s]*?)<\/style>/ig, '<style />'),
       { ocd: true })), 'html')
@@ -103,7 +112,7 @@ async function collectDebugData() {
   }
 }
 
-var downloadMenu = Menu.buildFromTemplate([
+const downloadMenu = Menu.buildFromTemplate([
   {
     label: '📚 Digi4School',
     click: () => {
@@ -162,11 +171,11 @@ var downloadMenu = Menu.buildFromTemplate([
     submenu: [
       {
         label: '📄 Current Page',
-        click: async () => await downloader.requestDownloadAsync(mainWindow, 'page')
+        click: async () => await downloader.requestDownloadAsync(mainWindow, mainWindow.webContents, 'page')
       },
       {
         label: '📘 Complete Book',
-        click: async () => await downloader.requestDownloadAsync(mainWindow, 'book')
+        click: async () => await downloader.requestDownloadAsync(mainWindow, mainWindow.webContents, 'book')
       }
     ]
   },
@@ -236,37 +245,37 @@ var downloadMenu = Menu.buildFromTemplate([
       },
       {
         label: 'Releases',
-        click: async () => await shell.openExternal('https://github.com/hampoelz/Digi4School2Pdf/releases')
+        click: () => shell.openExternal('https://github.com/hampoelz/Digi4School2Pdf/releases')
       },
       {
         type: 'separator'
       },
       {
         label: 'Debug Report',
-        click: async () => await collectDebugData()
+        click: async () => await collectDebugDataAsync()
       },
       {
         type: 'separator'
       },
       {
         label: 'Visit on Github',
-        click: async () => await shell.openExternal('https://github.com/hampoelz/Digi4School2Pdf')
+        click: () => shell.openExternal('https://github.com/hampoelz/Digi4School2Pdf')
       },
       {
         label: 'View License',
-        click: async () => await shell.openExternal('https://github.com/hampoelz/Digi4School2Pdf/blob/master/LICENSE')
+        click: () => shell.openExternal('https://github.com/hampoelz/Digi4School2Pdf/blob/master/LICENSE')
       },
       {
         label: 'Report Issue',
-        click: async () => await shell.openExternal('https://github.com/hampoelz/Digi4School2Pdf/issues')
+        click: () => shell.openExternal('https://github.com/hampoelz/Digi4School2Pdf/issues')
       },
       {
         label: 'By Rene Hampölz',
-        click: async () => await shell.openExternal('https://github.com/hampoelz')
+        click: () => shell.openExternal('https://github.com/hampoelz')
       },
       {
         label: 'hampoelz.net',
-        click: async () => await shell.openExternal('https://hampoelz.net/')
+        click: () => shell.openExternal('https://hampoelz.net/')
       },
     ]
   }]);
