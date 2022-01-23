@@ -24,6 +24,7 @@ const options = {
   show: true,
   webPreferences: {
     nodeIntegration: false,
+    backgroundThrottling: false,
     preload: path.resolve(__dirname, 'src', 'preload.js'),
   }
 };
