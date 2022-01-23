@@ -135,15 +135,22 @@ async function goToPage(browserWindow, page, loadMethod) {
     let pageUrl = browserWindow.webContents.getURL();
     const params = pageUrl.split('?')[1];
 
+    let isPageParam = false;
+
     if (params) {
         params.split('&').forEach(item => {
-            if (item.split('=')[0] == 'page')
+            if (item.split('=')[0] == 'page') {
                 // If no page given go to default page
                 pageUrl = pageUrl.replace(item, page == undefined ? '' : 'page=' + page);
+                isPageParam = true;
+            }
         });
-    } else if (page != undefined) {
-        let prefix = '?';
-        if (pageUrl.substr(pageUrl.length - 1, 1) == prefix) prefix = '';
+    }
+    
+    if (!isPageParam && page != undefined) {
+        let prefix = '';
+        if (params == undefined) prefix = '?';
+        if (params.length > 0) prefix = '&'
         pageUrl += `${prefix}page=${page}`;
     }
 
