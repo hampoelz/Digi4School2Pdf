@@ -1,0 +1,27 @@
+{
+    "name": "digi4school2pdf",
+    "description": "Download E-Books from Digi4School as PDF",
+    "repository": "https://github.com/hampoelz/Digi4School2Pdf.git",
+    "history": [
+        {
+            "version": "0.3.1-beta",
+            "files": {
+                "win32": "https://github.com/hampoelz/Digi4School2Pdf/releases/download/v0.3.1-BETA/Digi4School2Pdf-v0.3.1-BETA-win32-setup.exe"
+            },
+            "staggering": "100%",
+            "isPrerelease": false,
+            "isMandatory": false
+        },
+        {
+            "version": "",
+            "files": {
+                "win32": "",
+                "darwin": "",
+                "linux": ""
+            },
+            "staggering": "0%",
+            "isPrerelease": false,
+            "isMandatory": false
+        }
+    ]
+}

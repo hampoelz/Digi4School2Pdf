@@ -17,7 +17,7 @@ const debug = {
 consoleLogger(debug.logs, debug.warns, debug.errors);
 
 ipcRenderer.handle('DebugData', async () => {
-  const htmlData = await frameLoopAsync(dom => dom.querySelector('html').outerHTML);
+  const htmlData = await frameLoopAsync(dom => dom.querySelector('html').outerHTML) ?? [];
   
   return {
     logs: debug.logs,
@@ -29,20 +29,20 @@ ipcRenderer.handle('DebugData', async () => {
 
 ipcRenderer.handle('PageData', async () => {
   const parser = selectParser();
-  const getData = parser.getPageData;
+  const getData = parser?.getPageData;
 
   const dataSet = await frameLoopAsync(getData); // [[], [], ...]
-  const data = dataSet.filter(data => Array.isArray(data) && data.length > 0)[0];
+  const data = dataSet?.filter(data => Array.isArray(data) && data.length > 0)[0] ?? [];
 
   return data;
 });
 
 ipcRenderer.handle('PageLabel', async () => {
   const parser = selectParser();
-  const getLabel = parser.getPageLabel;
+  const getLabel = parser?.getPageLabel;
 
   const labelSet = await frameLoopAsync(getLabel);
-  const label = labelSet.filter(label => typeof label == 'string')[0];
+  const label = labelSet?.filter(label => typeof label == 'string')[0] ?? '';
   let page = '';
 
   if (label)
@@ -56,25 +56,25 @@ ipcRenderer.handle('PageLabel', async () => {
 
 ipcRenderer.handle('BookTitle', async () => {
   const parser = selectParser();
-  const getTitle = parser.getBookTitle;
+  const getTitle = parser?.getBookTitle;
 
   let titleSet = await frameLoopAsync(getTitle);
-  titleSet = titleSet.filter(title => typeof title == 'string');
-  const title = titleSet[1] ?? titleSet[0];
+  titleSet = titleSet?.filter(title => typeof title == 'string');
+  const title = titleSet[1] ?? titleSet[0] ?? '';
 
   return title;
 });
 
 ipcRenderer.handle('PageLoaded', async () => {
   const parser = selectParser();
-  const isLoaded = parser.isPageLoaded;
+  const isLoaded = parser?.isPageLoaded;
 
   const result = await new Promise(resolve => {
     setTimeout(() => resolve(false), 120_000);
 
     let check = setInterval(async () => {
       const isLoadedSet = await frameLoopAsync(isLoaded);
-      const loaded = isLoadedSet.filter(loaded => typeof loaded == 'boolean').includes(true);
+      const loaded = isLoadedSet?.filter(loaded => typeof loaded == 'boolean').includes(true);
 
       if (loaded) {
         clearInterval(check);
@@ -208,7 +208,7 @@ function selectParser() {
 }
 
 async function frameLoopAsync(method) {
-  if (!(method instanceof Function)) return;
+  if (!(method instanceof Function) || document.body.childElementCount <= 0) return;
   let results = [];
 
   results[0] = await method(window.document);
