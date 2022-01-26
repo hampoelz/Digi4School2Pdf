@@ -1,7 +1,7 @@
 {
   "name": "digi4school2pdf",
   "productName": "Digi4School Downloader",
-  "version": "0.3.2",
+  "version": "0.3.2-BETA",
   "description": "Download E-Books from Digi4School as PDF",
   "main": "main.js",
   "scripts": {
@@ -33,9 +33,13 @@
   ],
   "author": {
     "name": "Rene Hampölz",
-    "email": "rene@hampoelz.net"
+    "email": "rene@hampoelz.net",
+    "url": "https://hampoelz.net/"
   },
-  "homepage": "https://hampoelz.net/",
+  "homepage": "https://github.com/hampoelz/Digi4School2Pdf#readme",
+  "bugs": {
+    "url": "https://github.com/hampoelz/Digi4School2Pdf/issues"
+  },
   "license": "MIT",
   "devDependencies": {
     "electron": "^16.0.0",

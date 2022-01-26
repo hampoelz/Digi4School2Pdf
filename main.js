@@ -3,7 +3,7 @@ const downloader = require('./src/downloader');
 const isFirstRun = require('first-run');
 const path = require('path');
 
-const version = 'Pre-Release v' + app.getVersion() + '-BETA';
+const version = 'Pre-Release v' + app.getVersion();
 
 // TODO: Add offline check
 // TODO: Modernize UI
